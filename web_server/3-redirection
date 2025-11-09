@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Configures Nginx with a 301 redirect
+
+# Update and install nginx
+apt-get update -y
+apt-get install nginx -y
+
+# Create the index page
+echo "Holberton School for the win!" > /var/www/html/index.html
+
+# Configure redirect in the default server block
+# Add redirect rule before the location / block
+sed -i '/server_name _;/a \\n\trewrite ^/redirect_me https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;' /etc/nginx/sites-available/default
+
+# Start nginx
+service nginx start
