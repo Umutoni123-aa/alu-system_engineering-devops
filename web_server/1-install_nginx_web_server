@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
-# Script that configures an Nginx server
+# Script that installs and configures Nginx web server
 
-# Update package list and install nginx
+# Update package list
 apt-get update -y
+
+# Install nginx
 apt-get install nginx -y
 
-# Create a simple HTML page with "Holberton School"
-echo "Holberton School" > /var/www/html/index.nginx-debian.html
+# Create the HTML page with "Holberton School"
+echo "Holberton School" > /var/www/html/index.html
 
-# Ensure nginx is listening on port 80
-sed -i 's/listen 80 default_server;/listen 80 default_server;/g' /etc/nginx/sites-available/default
-sed -i 's/listen \[::\]:80 default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-available/default
+# Make sure Nginx default config is set correctly
+cat > /etc/nginx/sites-available/default <<EOF
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+    
+    server_name _;
+    
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF
 
-# Restart nginx without using systemctl
+# Restart nginx using service command (not systemctl)
 service nginx restart
