@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Script to install and configure HAProxy on the load balancer server (lb-01) 
+# using the roundrobin algorithm for web-01 (44.203.40.15) and web-02 (13.221.14.191).
+
+# 1. Update package list and install HAProxy
+echo "Updating packages and installing HAProxy..."
+sudo apt-get -y update
+sudo apt-get -y install haproxy
+
+# 2. Define the IP addresses 
+
+WEB_01_IP="44.203.40.15"
+WEB_02_IP="13.221.14.191"
+
+
+
+# Frontend: Listens on the Load Balancer's public IP on port 80
+
+frontend http_front
+    bind *:80
+    default_backend http_back
+
+# Backend: Defines the web servers and load balancing method
+
+backend http_back
+
+    balance roundrobin
+    server 6933-web-01 $WEB_01_IP:80 check
+    server 6933-web-02 $WEB_02_IP:80 check
+"
+# 5. Ensure HAProxy is enabled to start via init script (required)
+
+echo "Enabling HAProxy service..."
+
+# This ensures ENABLED=1 is set in /etc/default/haproxy for init script management
+echo "ENABLED=1" | sudo tee /etc/default/haproxy
+# 6. Restart HAProxy to apply the new configuration
+echo "Restarting HAProxy service..."
+
+sudo service haproxy restart
+
+echo "HAProxy configuration complete. Check status with: sudo service haproxy status"
