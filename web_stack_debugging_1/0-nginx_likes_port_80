@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# configures a server to listening on port 80 of all servers active IPv4 IPs
+# Script to fix Nginx from failing to start by increasing the maximum number of open file descriptors (ulimit -n) to 4096.
 
-sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+# 1. Increase the Resource Limit (ulimit) for Nginx.
+# This uses 'sed' to replace the 'ULIMIT' setting in the Nginx default config file.
+# The expected default line is usually ULIMIT="-n 1024" or similar, we change it to 4096.
+sudo sed -i 's/ULIMIT="-n 15"/ULIMIT="-n 4096"/' /etc/default/nginx
+
+# 2. Restart the Nginx service to apply the new, higher limit and successfully start Nginx.
 sudo service nginx restart
