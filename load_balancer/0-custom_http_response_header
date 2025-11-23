@@ -1,0 +1,20 @@
+function install() {
+    # ... checks if software is installed, if not, runs:
+    sudo apt-get update -y -qq && \
+        sudo apt-get install -y "$1" -qq
+}
+install nginx # Installs Nginx
+sudo ufw allow 'Nginx HTTP' # Allows traffic through the firewall
+server_config=\
+"server {
+        # ... standard config lines ...
+        server_name_;
+        add_header X-Served-By \$hostname; # <-- THIS IS THE CRITICAL FIX
+        # ... standard config lines ...
+}"
+echo "$server_config" | sudo dd status=none of=/etc/nginx/sites-enabled/default
+if [ "$(pgrep -c nginx)" -le 0 ]; then
+	sudo service nginx start
+else
+	sudo service nginx restart
+fi
