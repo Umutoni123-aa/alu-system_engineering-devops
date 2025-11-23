@@ -1,20 +1,61 @@
+#!/usr/bin/env bash
+# Script to install Nginx and configure it to include the X-Served-By header with the server's hostname.
+
+echo -e "Starting Nginx setup and configuration...\n"
+
+# 1. Install Nginx
 function install() {
-    # ... checks if software is installed, if not, runs:
-    sudo apt-get update -y -qq && \
-        sudo apt-get install -y "$1" -qq
+	command -v "$1" &> /dev/null
+	if [ $? -ne 0 ]; then
+		echo -e "Installing: $1\n"
+		sudo apt-get update -y -qq && \
+			sudo apt-get install -y "$1" -qq
+	else
+		echo -e "${1} is already installed.\n"
+	fi
 }
-install nginx # Installs Nginx
-sudo ufw allow 'Nginx HTTP' # Allows traffic through the firewall
-server_config=\
-"server {
-        # ... standard config lines ...
-        server_name_;
-        add_header X-Served-By \$hostname; # <-- THIS IS THE CRITICAL FIX
-        # ... standard config lines ...
-}"
-echo "$server_config" | sudo dd status=none of=/etc/nginx/sites-enabled/default
-if [ "$(pgrep -c nginx)" -le 0 ]; then
-	sudo service nginx start
+
+install nginx
+
+# 2. Grant permissions for web directory (standard practice)
+if [ -d "/var/www" ]; then
+	sudo chown -R "$USER":"$USER" /var/www
+	sudo chmod -R 755 /var/www
 else
-	sudo service nginx restart
+	sudo mkdir -p /var/www
+	sudo chown -R "$USER":"$USER" /var/www
+	sudo chmod -R 755 /var/www
 fi
+
+# 3. Create a basic index page
+echo "Hello Holberton!" | sudo tee /var/www/html/index.html > /dev/null
+
+# 4. Define the Nginx configuration with the required header
+# The $hostname variable is an internal Nginx variable that provides the server's hostname.
+NGINX_CONFIG=\
+"server {
+		listen 80 default_server;
+		listen [::]:80 default_server;
+		root /var/www/html;
+		index index.html index.htm index.nginx-debian.html;
+		
+		# CRITICAL FIX: Add the custom header X-Served-By with the hostname
+		add_header X-Served-By \$hostname;
+		
+		location / {
+			try_files \$uri \$uri/ =404;
+		}
+}"
+
+# 5. Overwrite the default Nginx configuration file
+echo "Applying new Nginx configuration..."
+echo "$NGINX_CONFIG" | sudo tee /etc/nginx/sites-available/default > /dev/null
+
+# 6. Create the symlink to sites-enabled (ensure config is active)
+sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# 7. Restart Nginx to apply changes
+echo "Restarting Nginx service..."
+sudo service nginx restart
+
+echo "Nginx configured successfully with X-Served-By header."

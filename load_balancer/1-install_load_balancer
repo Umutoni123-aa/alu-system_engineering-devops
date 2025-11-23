@@ -7,12 +7,12 @@ echo "Updating packages and installing HAProxy..."
 sudo apt-get -y update
 sudo apt-get -y install haproxy
 
-# 2. Define the IP addresses of your web servers from the assignment table
+# 2. Define the IP addresses of your web servers
 WEB_01_IP="44.203.40.15"
 WEB_02_IP="13.221.14.191"
 
 # 3. Create the complete, clean HAProxy configuration content
-# NOTE: We overwrite the config file, which is safer than appending.
+# NOTE: The server identifiers are explicitly set to 'web-01' and 'web-02'
 HAPROXY_CONFIG_CONTENT="
 global
     log /dev/log    local0 notice
@@ -36,8 +36,9 @@ frontend http_front
 # Backend: Defines the web servers and load balancing method
 backend http_back
     balance roundrobin
-    server 6933-web-01 $WEB_01_IP:80 check
-    server 6933-web-02 $WEB_02_IP:80 check
+    # CRITICAL FIX: Using 'web-01' and 'web-02' as the server identifier names
+    server web-01 $WEB_01_IP:80 check
+    server web-02 $WEB_02_IP:80 check
 "
 
 # 4. Overwrite the HAProxy configuration file
@@ -46,11 +47,14 @@ echo "$HAPROXY_CONFIG_CONTENT" | sudo tee /etc/haproxy/haproxy.cfg > /dev/null
 
 # 5. Ensure HAProxy is enabled to start via init script (required)
 echo "Enabling HAProxy service..."
-# This ensures ENABLED=1 is set in /etc/default/haproxy for init script management
-echo "ENABLED=1" | sudo tee /etc/default/haproxy
+sudo sed -i 's/^ENABLED=0/ENABLED=1/' /etc/default/haproxy 
+# Fallback method just in case 'sed' fails:
+if ! grep -q "ENABLED=1" /etc/default/haproxy; then
+    echo "ENABLED=1" | sudo tee -a /etc/default/haproxy
+fi
 
 # 6. Restart HAProxy to apply the new configuration
 echo "Restarting HAProxy service..."
 sudo service haproxy restart
 
-echo "HAProxy configuration complete. Check status with: sudo service haproxy status"
+echo "HAProxy configuration complete. The server names 'web-01' and 'web-02' are included."
