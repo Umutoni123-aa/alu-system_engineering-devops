@@ -1,6 +1,6 @@
-# fix nginx to accept and serve more requests
+# Puppet manifest to increase Nginx file descriptor limits to handle high traffic
 
-exec {'modify max open files limit setting':
-  command => 'sed -i "s/15/10000/" /etc/default/nginx && sudo service nginx restart',
-  path    => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games',
+exec { 'fix--for-nginx':
+  command => '/bin/sed -i "s/15/4096/" /etc/default/nginx && /usr/sbin/service nginx restart',
+  path    => ['/usr/bin', '/bin', '/usr/sbin'],
 }
